@@ -43,7 +43,7 @@ class Parser
   {
     static::$indent = 2;
 
-    $source = preg_replace('/[\r\n]{2,}/', "\n", $source);
+    $source = preg_replace('/[\r\n]/', "\n", $source);
 
     if (preg_match('/^ +(?=\S)/m', $source, $match)) {
       static::$indent = strlen($match[0]);
@@ -53,7 +53,7 @@ class Parser
     $code  = '';
     $stack = array();
     $lines = explode("\n", $source);
-    $lines = array_filter(array_map('rtrim', $lines));
+    $lines = array_map('rtrim', $lines);
 
     foreach ($lines as $i => $line) {
       $key    = '$out';
@@ -140,7 +140,6 @@ class Parser
         }
       }
 
-
       foreach ($tree as $key => $value) {
         $indent = strlen($key) - strlen(ltrim($key));
 
@@ -211,7 +210,7 @@ class Parser
       break;
       case '<';
         // html
-        return $key . $text;
+        return "$key$text";
       break;
       case '-';
         // php
@@ -278,8 +277,7 @@ class Parser
         if ( ! empty($match[0])) {
           $text = static::line($key);
         } else {
-          $text = trim($key) . $text;
-          $text = "\n$text\n";
+          $text = "$key$text";
         }
 
         $out = ($tag OR $args) ? Markup::render($tag ?: 'div', $args, $text) : $text;
