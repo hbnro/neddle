@@ -277,7 +277,7 @@ class Parser
         if ( ! empty($match[0])) {
           $text = static::line($key);
         } else {
-          $text = "$key$text";
+          $text = "\n$key$text\n";
         }
 
         $out = ($tag OR $args) ? Markup::render($tag ?: 'div', $args, $text) : $text;
