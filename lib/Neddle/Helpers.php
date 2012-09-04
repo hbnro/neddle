@@ -12,14 +12,14 @@ class Helpers
                   );
 
   private static $fix = array(
+                    '/<!--#HASH\d+#-->/' => '',
                     '/\s*<\/pre>/s' => "\n</pre>",
                     '/(?<=>|^) *\|| *?<!--#PRE#-->/m' => '',
                     '/([,([]\s*)([a-z][\w:-]+)\s*=>\s*/' => "\\1'\\2' => ",
                     '/<\?=\s*(.+?)\s*;?\s*\?>/' => '<?php echo \\1; ?>',
                     '/<\?php\s+(?!echo\s+|\})/' => "<?php ",
-                    '/\}[\s;]*else(?=\s*if|\b)/s' =>'} else',
                     '/#\{(.+?)\}/' => '<?php echo \\1; ?>',
-                    '/<!--#HASH\d+#-->/' => '',
+                    '/\s*\?>\s*<\?php\s+(?=else)/s' => '',
                   );
 
   private static $filters = array();

@@ -186,7 +186,14 @@ class Parser
       $after  = trim(array_pop($test));
       $before = trim(array_pop($test));
 
-      $line   = $match[0] === 'unless' ? "if ( ! ($after)) " : "$match[0] ($after) ";
+      if ($match[0] === 'else') {
+        $line = "$match[0] ";
+      } elseif ($match[0] === 'unless') {
+        $line = "if ( ! ($after)) ";
+      } else {
+        $line = "$match[0] ($after) ";
+      }
+
       $suffix = '{';
 
       if ($before) {
