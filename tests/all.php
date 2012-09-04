@@ -9,6 +9,11 @@ Neddle\Helpers::register('plain', function ($value) { return $value; });
 Neddle\Helpers::register('php', function ($value) { return '<' . "?php $value ?>"; });
 
 
+$clean = function ($str) {
+    return preg_replace('/\s+/', '', $str);
+  };
+
+
 $tpl = <<<TPL
 
 .candy
@@ -28,27 +33,17 @@ be rendered as is
 
 dl
   dt OK
-
   dd FUUU
 
 .foo
-
   ul#foo.candy
-
     li.x
-
       a#y { href => "#", class => "bar" } = 'Link'
-
-    /li.z
-
+    /
       a.b { href => "#c" } link
-
       a.link text
-
       a.link text
-
       a.link text
-
   p dos
 
 
@@ -57,37 +52,13 @@ TPL;
 
 $view = Neddle\Parser::render($tpl);
 $test = @eval('ob_start(); ?' . ">$view<" . '?php return ob_get_clean();');
-$expect = '<div class="candy">
- x man?
- fuck yeah
-</div>
-' . phpversion() . '<span>&lt;escaped text&gt;  <Fuck yeah!></span>
-This is text and should
-be rendered as is
-<dl>
-  <dt>
-    OK
-  </dt>
-  <dd>
-    FUUU
-  </dd></dl>
-<div class="foo">
-  <ul id="foo" class="candy">
-    <li class="x">
-      <a href="#" class="bar" id="y">Link</a></li>
-    <!--
-        li.z
-          a.b { href => "#c" } link
-          a.link text
-          a.link text
-          a.link text
-    --></ul>
-  <p>
-    dos
-  </p></div>';
+$expect = '<divclass="candy">xman?fuckyeah</div>' . phpversion() . '<span>&lt;escapedtext&gt;<Fuckyeah!></span>';
+$expect .= 'Thisistextandshouldberenderedasis<dl><dt>OK</dt><dd>FUUU</dd></dl><divclass="foo"><ulid="foo"class="candy">';
+$expect .= '<liclass="x"><ahref="#"class="bar"id="y">Link</a></li><!--a.b{href=>"#c"}linka.linktexta.linktexta.linktext--></ul><p>dos</p></div>';
 
 echo "\nOutput: ";
-echo $expect === $test ? 'OK' : 'FAIL';
+echo $expect === $clean($test) ? 'OK' : 'FAIL';
+
 
 
 $tpl = <<<DOC
@@ -158,7 +129,7 @@ TEXT;
 
 $view = Neddle\Parser::render($tpl);
 $test = @eval('ob_start(); ?' . ">$view<?" . 'php return ob_get_clean();');
-$test = trim(str_replace(' ', '', strip_tags($test)));
+$test = $clean(strip_tags($test));
 $expect = '321AAAA123FTW!!';
 
 echo "\nConditions: ";
