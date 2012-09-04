@@ -152,9 +152,8 @@ class Parser
           $out []= Helpers::execute(substr(trim($key), 1), $value);
           continue;
         } elseif (substr(trim($key), 0, 1) === '/') {
-          $key   = preg_replace("/ {{$indent}}\//", str_repeat(' ', $indent), $key);
           $value = join("\n", Helpers::flatten($value));
-          $out []= "<!--\n$key\n$value\n-->";
+          $out []= "<!--\n$value\n-->";
           continue;
         } elseif (substr(trim($key), 0, 3) === 'pre') {
           $value = join("\n", Helpers::flatten($value));
@@ -208,7 +207,7 @@ class Parser
     switch (substr($key, 0, 1)) {
       case '/';
         // <!-- ... -->
-        return '<!--' . substr($key, 1) . "-->$text";
+        return '<!--' . trim(substr($key, 1)) . "-->$text";
       break;
       case '<';
         // html
