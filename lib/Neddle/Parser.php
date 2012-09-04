@@ -182,9 +182,19 @@ class Parser
       $args   = ! empty($match[1]) ? $match[1] : '';
       $line   = str_replace($match[0], "function ($args)", $line);
       $line  .= 'use($__){extract($__,EXTR_SKIP|EXTR_REFS);unset($__);';
-    } elseif (preg_match('/^\s*(' . static::$open . ')(.+?)$/', $line, $match)) {
-      $line   = "$match[1] ($match[2])";
+    } elseif (preg_match('/\b' . static::$open . '\b/', $line, $match)) {
+      $test   = explode($match[0], $line);
+
+      $after  = trim(array_pop($test));
+      $before = trim(array_pop($test));
+
+      $line   = $match[0] === 'unless' ? "if ( ! ($after)) " : "$match[0] ($after) ";
       $suffix = '{';
+
+      if ($before) {
+        $suffix .= " $prefix$before; }";
+        $prefix  = '';
+      }
     }
 
     return "$prefix$line$suffix";
@@ -267,8 +277,7 @@ class Parser
         preg_match('/^\s*=.+?/', $key, $match);
 
         if ( ! empty($match[0])) {
-          $key  = trim(substr(trim($key), 1));
-          $text = "<?php echo $key; ?>$text";
+          $text = static::line($key);
         } else {
           $text = trim($key) . $text;
           $text = "\n$text\n";
