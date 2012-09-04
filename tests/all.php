@@ -128,7 +128,6 @@ foreach (array('title', 'description', 'published_at', 'keywords', 'body') as $i
 }
 
 $view = Neddle\Parser::render($tpl);
-@eval('ob_start(); ?' . ">$view<?" . 'php ob_end_clean();');
 
 $doc->body = Neddle\Parser::render($doc->body);
 $doc->keywords = array_filter(array_map('trim', preg_split('/[,\s]+/', $doc->keywords)));
@@ -136,4 +135,33 @@ $doc->keywords = array_filter(array_map('trim', preg_split('/[,\s]+/', $doc->key
 
 echo "\nHelpers: ";
 echo (($doc->title == 'Hello World') && in_array('simple', $doc->keywords)) ? 'OK' : ' FAIL';
+
+
+
+$tpl = <<<'TEXT'
+
+- $bar = 4
+- $foo = array(1,2,3)
+ul
+  - while $bar -= 1
+    li = "$bar"
+= "A" for $i = 0; $i < 4; $i += 1
+= "<p>$bar</p>" foreach $foo as $bar
+- $candy = 'does' if !! $foo
+= "FTW!!" unless false
+
+- unless true
+  p Welcome sir!
+
+TEXT;
+
+
+$view = Neddle\Parser::render($tpl);
+$test = @eval('ob_start(); ?' . ">$view<?" . 'php return ob_get_clean();');
+$test = trim(str_replace(' ', '', strip_tags($test)));
+$expect = '321AAAA123FTW!!';
+
+echo "\nConditions: ";
+echo $test === $expect ? 'OK' : 'FAIL';
+
 echo "\n\n";
