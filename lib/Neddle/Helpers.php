@@ -19,7 +19,7 @@ class Helpers
                     '/<\?=\s*(.+?)\s*;?\s*\?>/' => '<?php echo \\1; ?>',
                     '/<\?php\s+(?!echo\s+|\})/' => "<?php ",
                     '/#\{(.+?)\}/' => '<?php echo \\1; ?>',
-                    '/\s*\?>\s*<\?php\s+(?=else)/s' => '',
+                    '/\?>\s*<\?php\s+(?=else)/s' => '',
                   );
 
   private static $filters = array();
