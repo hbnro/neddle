@@ -4,7 +4,7 @@ Tailor's skills!
 Neddle is inspired from HAML/Jade and CoffeeScript, isn’t really a full
 parser but it handles your templates very well.
 
-Yeah, it could has issues and neither throws any syntax warning about errors.
+Ok, it might have issues and do not throw any warnings about syntax errors.
 
 
 ## The basics
@@ -136,6 +136,6 @@ And this is the source for the **example.neddle** file.
     p = "Hello $name!"
 
 
-## You're welcome
+## Want to collaborate?
 
 If you like, fork, download and use it.
