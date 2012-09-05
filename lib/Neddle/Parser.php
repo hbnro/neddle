@@ -181,7 +181,7 @@ class Parser
       $line   = str_replace($match[0], "function ($args)", $line);
       $line  .= 'use($__){extract($__,EXTR_SKIP|EXTR_REFS);unset($__);';
     } elseif (preg_match('/\b' . static::$open . '\b/', $line, $match)) {
-      $test   = explode($match[0], $line);
+      $test   = explode($match[0], $line, 2);
 
       $after  = trim(array_pop($test));
       $before = trim(array_pop($test));
