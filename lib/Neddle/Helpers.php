@@ -22,6 +22,8 @@ class Helpers
                     '/\?>\s*<\?php\s+(?=else)/s' => '',
                   );
 
+  private static $args_expr = '/(?:^|\s+)(?:([\w:-]+)\s*=\s*([\'"]?)(.*?)\\2|[\w:-]+)(?=\s+|$)/';
+
   private static $filters = array();
 
 
@@ -83,6 +85,27 @@ class Helpers
   public static function quote($text)
   {
     return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8', FALSE);
+  }
+
+  public static function args($text)
+  {
+    $out = array();
+
+    preg_match_all(static::$args_expr, $text, $match);
+
+    foreach ($match[1] as $i => $key) {
+      if (empty($key)) {
+        $out []= trim($match[0][$i]);
+        continue;
+      }
+
+      $val = htmlspecialchars($match[3][$i]);
+      $key = strtolower($key);
+
+      $out[$key] = $val;
+    }
+
+    return $out;
   }
 
 }
