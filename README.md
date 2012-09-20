@@ -98,7 +98,7 @@ templates into php code. You should save and execute the produced code.
 
     <?php
 
-    require 'neddle/vendor/autoload.php';
+    require 'vendor/autoload.php';
 
     # raw handling
     $tpl = 'a { href => "#" } = "link"';
