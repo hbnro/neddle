@@ -33,7 +33,7 @@ class Markup
     $hash = substr(md5($tag . $args . microtime(TRUE)), 0, 7);
     $out  = in_array($tag, static::$empty) ? "$hash<$tag>" : "$hash<$tag>$text</$tag>";
 
-    $repl = "<$tag<?php echo Neddle\Markup::attrs($args); ?>";
+    $repl = "<$tag<?php echo \Neddle\Markup::attrs($args); ?>";
 
     $args && $out = str_replace("$hash<$tag", $repl, $out);
 
