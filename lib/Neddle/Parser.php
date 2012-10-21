@@ -270,6 +270,15 @@ class Parser
           // TODO: nested tags :foo#candy:.bar
         }
 
+        // raw attributes ( key="val" )
+        preg_match('/^\s*\((.+?)\)/', $key,$match);
+
+        if ( ! empty($match[0])) {
+          $key   = str_replace($match[0], '', $key);
+          $tmp   = Helpers::args($match[1]);
+          $args += $tmp;
+        }
+
         // attributes { hash => val }
         preg_match('/^\s*\{(.+?)\}/', $key, $match);
 
