@@ -44,6 +44,7 @@ class Parser
     static::$indent = 2;
 
     $source = preg_replace('/[\r\n]/', "\n", $source);
+    $source = preg_replace("/\s*, *\n+\s*/", ',', $source);
 
     if (preg_match('/^ +(?=\S)/m', $source, $match)) {
       static::$indent = strlen($match[0]);
