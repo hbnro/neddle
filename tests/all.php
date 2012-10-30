@@ -45,6 +45,8 @@ dl
       a.link text
       a.link text
   p dos
+- \$foo = 'bar'
+span ( key="#{\$foo}" ) etc.
 
 
 TPL;
@@ -54,11 +56,10 @@ $view = Neddle\Parser::render($tpl);
 $test = @eval('ob_start(); ?' . ">$view<" . '?php return ob_get_clean();');
 $expect = '<divclass="candy">xman?fuckyeah</div>' . phpversion() . '<span>&lt;escapedtext&gt;<Fuckyeah!></span>';
 $expect .= 'Thisistextandshouldberenderedasis<dl><dt>OK</dt><dd>FUUU</dd></dl><divclass="foo"><ulid="foo"class="candy">';
-$expect .= '<liclass="x"><ahref="#"class="bar"id="y">Link</a></li><!--a.b{href=>"#c"}linka.linktexta.linktexta.linktext--></ul><p>dos</p></div>';
+$expect .= '<liclass="x"><ahref="#"class="bar"id="y">Link</a></li><!--a.b{href=>"#c"}linka.linktexta.linktexta.linktext--></ul><p>dos</p></div><spankey="&lt;?phpecho$foo;?&gt;">etc.</span>';
 
 echo "\nOutput: ";
 echo $expect === $clean($test) ? 'OK' : 'FAIL';
-
 
 
 $tpl = <<<DOC
