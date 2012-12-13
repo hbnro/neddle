@@ -28,13 +28,15 @@ class Helpers
 
 
 
-  public static function register($name, \Closure $lambda) {
+  public static function register($name, \Closure $lambda)
+  {
     static::$filters[$name] = $lambda;
   }
 
-  public static function execute($filter, $value) {
+  public static function execute($filter, $value)
+  {
     if ( ! isset(static::$filters[$filter])) {
-      return "$filter:$value";// TODO: warn about?
+      throw new \Exception("Unknown ':$filter' filter");
     }
 
     $callback = static::$filters[$filter];
@@ -58,7 +60,8 @@ class Helpers
     return static::escape($text, TRUE);
   }
 
-  public static function flatten($set, $out = array()) {
+  public static function flatten($set, $out = array())
+  {
     foreach ($set as $one) {
       is_array($one) ? $out = static::flatten($one, $out) : $out []= $one;
     }

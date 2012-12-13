@@ -33,7 +33,7 @@ class Markup
     $hash = substr(md5($tag . $args . microtime(TRUE)), 0, 7);
     $out  = in_array($tag, static::$empty) ? "$hash<$tag>" : "$hash<$tag>$text</$tag>";
 
-    $repl = "<$tag<?php echo \Neddle\Markup::attrs($args); ?>";
+    $repl = "<$tag<?php echo \\Neddle\\Markup::attrs($args); ?>";
 
     $args && $out = str_replace("$hash<$tag", $repl, $out);
 
@@ -42,7 +42,8 @@ class Markup
     return $out;
   }
 
-  public static function attrs(array $args) {
+  public static function attrs(array $args)
+  {
     if (func_num_args() > 1) {
       $set = array_slice(func_get_args(), 1);
       foreach ($set as $one) {
@@ -63,7 +64,7 @@ class Markup
           $out []= $key . '-' . $index . '="' . (string) $test . '"';
         }
       } elseif ( ! is_numeric($key)) {
-        $out []= $key . '="' . Helpers::quote($value) . '"';
+        $out []= $key . '="' . \Neddle\Helpers::quote($value) . '"';
       }
     }
 

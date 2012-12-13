@@ -38,7 +38,7 @@ class Parser
   public static function render($text)
   {
     $out = static::build(static::tree($text));
-    $out = Helpers::repare($out);
+    $out = \Neddle\Helpers::repare($out);
 
     return $out;
   }
@@ -91,7 +91,7 @@ class Parser
 
       $code .= $key;
 
-      $line  = Helpers::escape($line);
+      $line  = \Neddle\Helpers::escape($line);
 
       $code .= $indent > $tab ? "=array(-1=>'$line')" : "[]='$line'";
       $code .= ";";
@@ -153,15 +153,15 @@ class Parser
           $out []= static::line($value, '', $indent - static::$indent);
           continue;
         } elseif (substr(trim($key), 0, 1) === ':') {
-          $value = join("\n", Helpers::flatten($value));
-          $out []= Helpers::execute(substr(trim($key), 1), $value);
+          $value = join("\n", \Neddle\Helpers::flatten($value));
+          $out []= \Neddle\Helpers::execute(substr(trim($key), 1), $value);
           continue;
         } elseif (substr(trim($key), 0, 1) === '/') {
-          $value = join("\n", Helpers::flatten($value));
+          $value = join("\n", \Neddle\Helpers::flatten($value));
           $out []= "<!--\n$value\n-->";
           continue;
         } elseif (substr(trim($key), 0, 3) === 'pre') {
-          $value = join("\n", Helpers::flatten($value));
+          $value = join("\n", \Neddle\Helpers::flatten($value));
           $value = preg_replace("/^$span\s{{$indent}}/m", '<!--#PRE#-->', $value);
         }
 
@@ -213,8 +213,8 @@ class Parser
 
   private static function line($key, $text = '', $indent = 0)
   {
-    $key  = Helpers::unescape(trim($key));
-    $text = Helpers::unescape($text);
+    $key  = \Neddle\Helpers::unescape(trim($key));
+    $text = \Neddle\Helpers::unescape($text);
 
     switch (substr($key, 0, 1)) {
       case '/';
@@ -234,7 +234,7 @@ class Parser
       break;
       case '~';
         $key = rtrim(trim(substr($key, 1)), ';');
-        return "<?php echo Neddle\Helpers::quote($key); ?>";
+        return "<?php echo \\Neddle\\Helpers::quote($key); ?>";
       case '=';
         // print
         $key = trim(substr($key, 1));
@@ -281,7 +281,7 @@ class Parser
 
         if ( ! empty($match[0])) {
           $key   = str_replace($match[0], '', $key);
-          $tmp   = Helpers::args($match[1]);
+          $tmp   = \Neddle\Helpers::args($match[1]);
           $args += $tmp;
         }
 
@@ -302,8 +302,8 @@ class Parser
           $text = "\n$key$text\n";
         }
 
-        $out = ($tag OR $args) ? Markup::render($tag ?: 'div', $args, $text) : $text;
-        $out = Helpers::indent($out, static::$indent);
+        $out = ($tag OR $args) ? \Neddle\Markup::render($tag ?: 'div', $args, $text) : $text;
+        $out = \Neddle\Helpers::indent($out, static::$indent);
 
         return $out;
       break;
