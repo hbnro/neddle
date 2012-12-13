@@ -27,6 +27,12 @@ class Parser
                     'output', 'progress', 'meter', 'details', 'summary', 'command', 'menu', 'device',
                   );
 
+  private static $prep = array(
+                    '/[\r\n]/' => "\n",
+                    "/\s*, *\n+\s*/" => ', ',
+                    "/\s*\\\\ *\n+\s*/" => ' ',
+                  );
+
 
 
   public static function render($text)
@@ -43,8 +49,7 @@ class Parser
   {
     static::$indent = 2;
 
-    $source = preg_replace('/[\r\n]/', "\n", $source);
-    $source = preg_replace("/\s*, *\n+\s*/", ',', $source);
+    $source = preg_replace(array_keys(static::$prep), static::$prep, $source);
 
     if (preg_match('/^ +(?=\S)/m', $source, $match)) {
       static::$indent = strlen($match[0]);
