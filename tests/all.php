@@ -17,14 +17,19 @@ $clean = function ($str) {
 $tpl = <<<TPL
 
 .candy
+
   | x man?
+
   | fuck yeah
 
 :php
+
   echo phpversion()
 
 span
+
   ~ '<escaped text>'
+
   = call_user_func(~>
     <Fuck yeah!>
 
@@ -32,19 +37,27 @@ This is text and should
 be rendered as is
 
 dl
+
   dt OK
+
   dd FUUU
 
 .foo
+
   ul#foo.candy
+
     li.x
+
       a#y { href => "#", class => "bar" } = 'Link'
+
     /
       a.b { href => "#c" } link
       a.link text
       a.link text
       a.link text
+
   p dos
+
 - \$foo = 'bar'
 span ( key="#{\$foo}" ) etc.
 
