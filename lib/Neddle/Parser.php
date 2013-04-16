@@ -14,7 +14,7 @@ class Parser
 
   private static $tags = array(
                     'hr', 'br', 'img', 'base', 'link', 'meta', 'input', 'embed', 'param',
-                    'source', 'track', 'area', 'html', 'head', 'title', 'base', 'link',
+                    'source', 'track', 'area', 'html', 'head', 'title', 'base', 'link', 'main',
                     'meta', 'style', 'script', 'noscript', 'body', 'section', 'nav', 'article',
                     'aside', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hgroup', 'header', 'footer', 'address',
                     'p', 'hr', 'pre', 'blockquote', 'ol', 'ul', 'li', 'dl', 'dt', 'dd', 'figure', 'figcaption',
@@ -59,7 +59,7 @@ class Parser
     $code  = '';
     $stack = array();
     $lines = explode("\n", $source);
-    $lines = array_map('rtrim', $lines);
+    $lines = array_values(array_filter(array_map('rtrim', $lines), 'strlen'));
 
     foreach ($lines as $i => $line) {
       $key    = '$out';
