@@ -61,8 +61,8 @@ dl
 - \$foo = 'bar'
 span ( key="#{\$foo}" ) etc.
 
-p { foo => 'bar',
-    baz => 'buzz' } this is,
+p { foo => :bar,
+    :baz => 'buzz' } this is,
   some large\
   text in there...
 
