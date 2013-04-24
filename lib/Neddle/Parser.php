@@ -106,27 +106,26 @@ class Parser
   {
     $out = array();
 
-    $block  = '/^\s*-\s*' . static::$block . '/i';
-    $ifthen  = '/(?<=[-~=\s])' . static::$ifthen . '\b/i';
+    $block  = '/^\s*-\s*' . static::$block . '\b/i';
+    $ifthen  = '/\s+(' . static::$ifthen . ')\b/i';
 
     if ( ! is_scalar($value)) {
       return $value;
     }
 
     if (preg_match($ifthen, $value, $test, PREG_OFFSET_CAPTURE)) {
-      @list($lft, $rgt) = array(substr($value, 0, $test[0][1]), substr($value, $test[0][1]));
+      @list($lft, $rgt) = array(substr($value, 0, $test[1][1]), substr($value, $test[1][1]));
 
-      $parts = array_map('trim', explode(trim($test[0][0]), $rgt, 2));
+      $parts = array_map('trim', explode(trim($test[1][0]), $rgt, 2));
       $expr  = join('', array_filter($parts, 'strlen'));
 
-      $block = $test[0][0];
+      $block = $test[1][0];
       $value = static::line($lft);
 
       if (strpos($block, 'unless') !== FALSE) {
         $expr = "! ($expr)";
         $block = 'if';
       }
-
       if (trim($lft, '-~= ')) {
         return "- $block ($expr) : ?" . ">$value<" . "?php end$block";
       } else {
@@ -143,8 +142,8 @@ class Parser
   {
     $out = array();
 
-    $block  = '/^\s*-\s*(?:' . static::$ifthen . '|' . static::$block . ')/i';
-    $lambda = '/' . static::$lambda . '/i';
+    $block  = '/^\s*-\s*(?:' . static::$ifthen . '|' . static::$block . ')\b/i';
+    $lambda = '/' . static::$lambda . '/';
 
     if ( ! is_scalar($value)) {
       return;
