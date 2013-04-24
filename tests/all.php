@@ -50,11 +50,11 @@ dl
 
       a#y { href => "#", class => "bar" } = 'Link'
 
-  /
-    a.b { href => "#c" } link
-    a.link text
-    a.link text
-    a.link text
+    /
+      a.b { href => "#c" } link
+      a.link text
+      a.link text
+      a.link text
 
     li lol
 
@@ -80,7 +80,7 @@ $expect .= '<pfoo="bar"baz="buzz">thisis,somelargetextinthere...</p>';
 
 echo "\nOutput: ";
 echo $expect === $clean($test) ? 'OK' : 'FAIL';
-echo $test;
+
 $tpl = <<<DOC
 
 :title
