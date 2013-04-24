@@ -6,21 +6,20 @@ class Helpers
 {
 
   private static $qt = array(
-                    '\\' => '<!--#BS#-->',
-                    '"' => '<!--#QUOT#-->',
-                    "'" => '<!--#APOS#-->',
+                    '\\' => '!uß;',
+                    "'" => '!u€;',
+                    '$' => '!u£;',
                   );
 
   private static $fix = array(
-                    '/<!--#HASH\d+#-->/' => '',
                     '/\s*<\/pre>/s' => '</pre>',
-                    '/(?<=>|^) *\|| *?<!--#PRE#-->/m' => '',
                     '/(?<![:\w]):([_a-zA-Z][\w-]*)(?=\s*(?:[,)\];]|$|=>))/' => "'\\1'",
                     '/([,([]\s*)([a-z][\w:-]*)\s*=>\s*/' => "\\1'\\2' => ",
                     '/<\?=\s*(.+?)\s*;?\s*\?>/' => '<?php echo \\1; ?>',
-                    '/<\?php\s+(?!echo\s+|\})/' => "<?php ",
                     '/#\{(.+?)\}/' => '<?php echo \\1; ?>',
-                    '/\?>\s*<\?php\s+(?=else)/s' => '',
+                    '/\?>\s*<\?php\s+(?=else|catch)/s' => '',
+                    '/>(\s+)</m' => ">\n\\1<",
+                    '/!Æ;/' => '',
                   );
 
   private static $args_expr = '/(?:^|\s+)(?:([\w:-]+)\s*=\s*([\'"]?)(.*?)\\2|[\w:-]+)(?=\s+|$)/';
@@ -41,7 +40,7 @@ class Helpers
     }
 
     $callback = static::$filters[$filter];
-    $value    = static::repare(static::unescape($value));
+    $value    = static::unescape($value);
 
     if (preg_match('/^ +/', $value, $match)) {
       $max   = strlen($match[0]);
@@ -67,18 +66,6 @@ class Helpers
       is_array($one) ? $out = static::flatten($one, $out) : $out []= $one;
     }
     return $out;
-  }
-
-  public static function indent($text, $max = 0)
-  {
-    $repl  = str_repeat(' ', $max);
-    $test  = explode("\n", $text);
-    $last  = array_pop($test);
-
-    $text  = join("\n$repl", array_filter($test));
-    $text .= substr($last, 0, 1) === '<' ? "\n$last" : $last;
-
-    return $text;
   }
 
   public static function repare($code)

@@ -7,10 +7,12 @@ class Parser
 
   private static $indent = 2;
 
-  private static $fn = '(?:\s*\(([^()]+?)\)\s*|())\s*~\s*>(?=\b|$)';
+  private static $attrid = '/^(?:#([a-z_][\da-z_-]*))?(?:.?([\d.a-z_-]+))?/i';
 
-  private static $id = '/^(?:#([a-z_][\da-z_-]*))?(?:.?([\d.a-z_-]+))?/i';
-  private static $open = '\b(?:if|unless|else(?:\s*if)?|while|switch|for(?:each)?)\b';
+  private static $ifthen = '(?:(?:else\s*?)?if|unless|while|switch|for(?:each)?|catch)';
+  private static $lambda = '(?:\(([^()]*?)\))?\s*~>(.*)?';
+  private static $block = '(?:else|do|try|finally)';
+
 
   private static $tags = array(
                     'hr', 'br', 'img', 'base', 'link', 'meta', 'input', 'embed', 'param',
@@ -28,6 +30,7 @@ class Parser
                   );
 
   private static $prep = array(
+                    '/\s*\|/m' => '!Æ;',
                     '/[\r\n]/' => "\n",
                     "/\s*, *\n+\s*/" => ', ',
                     "/\s*\\\\ *\n+\s*/" => ' ',
@@ -37,12 +40,11 @@ class Parser
 
   public static function render($text)
   {
-    $out = static::build(static::tree($text));
-    $out = \Neddle\Helpers::repare($out);
+    $out = static::fix(static::tree($text));
+    $out = \Neddle\Helpers::unescape(\Neddle\Helpers::repare($out));
 
     return $out;
   }
-
 
 
   private static function tree($source)
@@ -77,7 +79,7 @@ class Parser
       }
 
       foreach ($stack as $top) {
-        $key .= "['<!--#HASH$top#-->']";
+        $key .= "['#$top']";
       }
 
       if ($indent < $tab) {
@@ -108,143 +110,143 @@ class Parser
   }
 
 
-  private static function build($tree)
+  private static function open($value)
   {
-    $span  = str_repeat(' ', static::$indent);
-    $open  = '/^\s*-\s*' . static::$open . '/';
-    $block = '/[-=].+?' . static::$fn . '/';
-    $out   = array();
+    $out = array();
+
+    $block  = '/^\s*-\s*' . static::$block . '/i';
+    $ifthen  = '/\b' . static::$ifthen . '\b/i';
+
+    if ( ! is_scalar($value)) {
+      return $value;
+    }
+
+
+    if (preg_match($ifthen, $value, $test, PREG_OFFSET_CAPTURE)) {
+      @list($lft, $rgt) = array(substr($value, 0, $test[0][1]), substr($value, $test[0][1]));
+
+      $parts = array_map('trim', explode(trim($test[0][0]), $rgt, 2));
+      $expr  = join('', array_filter($parts, 'strlen'));
+
+      $block = $test[0][0];
+      $value = static::line($lft);
+
+      if (strpos($block, 'unless') !== FALSE) {
+        $expr = "! ($expr)";
+        $block = 'if';
+      }
+
+
+      if (trim($lft, '-~= ')) {
+        return "- $block ($expr) : ?" . ">$value<" . "?php end$block";
+      } else {
+        return "- $block ($expr) {";
+      }
+    } elseif (preg_match($block, $value)) {
+      return "$value {";
+    }
+
+    return $value;
+  }
+
+  private static function close($value)
+  {
+    $out = array();
+
+    $block  = '/^\s*-\s*(?:' . static::$ifthen . '|' . static::$block . ')/i';
+    $lambda = '/' . static::$lambda . '/i';
+
+    if ( ! is_scalar($value)) {
+      return;
+    }
+
+    if (preg_match($lambda, $value)) {
+      $lft = substr_count($value, '(');
+      $rgt = substr_count($value, ')');
+
+      $close = str_repeat(')', $lft - $rgt);
+
+      return '<' . "?php } : false$close; ?" . '>';
+    } elseif (preg_match($block, $value)) {
+      return '<' . '?php } ?' . '>';
+    }
+  }
+
+  private static function fix($tree, $indent = 0)
+  {
+    $out = array();
+    $span = static::span($indent);
 
     if ( ! empty($tree[-1])) {
+
+      ($overwrite = static::open($tree[-1])) && $tree[-1] = $overwrite;
+
       $sub[$tree[-1]] = array_slice($tree, 1);
 
-      if (preg_match($block, $tree[-1])) {
-        $lft = substr_count($tree[-1], '(');
-        $rgt = substr_count($tree[-1], ')');
-
-        $close = str_repeat(')', $lft - $rgt);
-
-        $sub[$tree[-1]] []= "<?php }$close; ?>";
-      } elseif (preg_match($open, $tree[-1])) {
-        $sub[$tree[-1]] []= '<?php } ?>';
+      if ($suffix = static::close($tree[-1])) {
+        $sub[$tree[-1]] []= $suffix;
       }
 
-      $out []= static::build($sub);
-    } else {
+      $out []= static::fix($sub, $indent + 1);
+    } elseif ($tree) {
       foreach ($tree as $key => $value) {
-        if ( ! is_scalar($value)) {
-          continue;
-        } elseif (preg_match($block, $value)) {
-          $lft = substr_count($value, '(');
-          $rgt = substr_count($value, ')');
-
-          $close = str_repeat(')', $lft - $rgt);
-
-          $tree []= "<?php }$close; ?>";
-        } elseif (preg_match($open, $value)) {
-          $tree []= '<?php } ?>';
-        }
-      }
-
-      foreach ($tree as $key => $value) {
-        $indent = strlen($key) - strlen(ltrim($key));
-
         if (is_string($value)) {
-          $out []= static::line($value, '', $indent - static::$indent);
-          continue;
-        } elseif (substr(trim($key), 0, 1) === ':') {
-          $value = join("\n", \Neddle\Helpers::flatten($value));
-          $out []= \Neddle\Helpers::execute(substr(trim($key), 1), $value);
-          continue;
-        } elseif (substr(trim($key), 0, 1) === '/') {
-          $value = join("\n", \Neddle\Helpers::flatten($value));
-          $out []= "<!--\n$value\n-->";
-          continue;
-        } elseif (substr(trim($key), 0, 3) === 'pre') {
-          $value = join("\n", \Neddle\Helpers::flatten($value));
-          $value = preg_replace("/^$span\s{{$indent}}/m", '<!--#PRE#-->', $value);
-        }
+          ($overwrite = static::lambda($value, TRUE)) && $value = $overwrite;
+          ($overwrite = static::open($value)) && $value = $overwrite;
 
-        $value = is_array($value) ? static::build($value) : $value;
-        $out []= static::line($key, $value, $indent);
+          $out []= static::line(substr($value, -1) === '{' ? $value = "$value }" : trim($value), '', $indent);
+        } else {
+          ($overwrite = static::lambda($key)) && $key = $overwrite;
+
+          $key = preg_match('/#\d{1,7}/', $key) ? FALSE : trim($key);
+
+          if (substr($key, 0, 3) === 'pre') {
+            $value = preg_replace("/^$span/m", '|', join("\n", \Neddle\Helpers::flatten($value)));
+          } elseif (substr($key, 0, 1) === ':') {
+            $value = \Neddle\Helpers::execute(substr($key, 1), join("\n", \Neddle\Helpers::flatten($value)));
+            $key   = FALSE;
+          } elseif (substr($key, 0, 1) === '/') {
+            $key   = join("\n", \Neddle\Helpers::flatten($value));
+            $key   = '/' . trim(preg_replace('/^/m', static::span($indent + 1), $key));
+            $value = '';
+          } else {
+            $value = static::fix($value, $indent);
+          }
+
+          $out []= $span . static::line($key, $value, $indent);
+        }
       }
     }
 
-    $out = join("\n", $out);
+    $out = join('', $out);
 
     return $out;
   }
 
-  private static function block($line, $prefix = '')
-  {
-    $suffix = ';';
-
-    if (preg_match('/' . static::$fn . '/', $line, $match)) {
-      $suffix = '';
-      $prefix = "\$__=get_defined_vars();$prefix";
-
-      $args   = ! empty($match[1]) ? $match[1] : '';
-      $line   = str_replace($match[0], "function ($args)", $line);
-      $line  .= 'use($__){extract($__,EXTR_SKIP|EXTR_REFS);unset($__);';
-    } elseif (preg_match('/\b' . static::$open . '\b/', $line, $match)) {
-      $test   = explode($match[0], $line, 2);
-
-      $after  = trim(array_pop($test));
-      $before = trim(array_pop($test));
-
-      if ($match[0] === 'else') {
-        $line = "$match[0] ";
-      } elseif ($match[0] === 'unless') {
-        $line = "if ( ! ($after)) ";
-      } else {
-        $line = "$match[0] ($after) ";
-      }
-
-      $suffix = '{';
-
-      if ($before) {
-        $suffix .= " $prefix$before; }";
-        $prefix  = '';
-      }
-    }
-
-    return "$prefix$line$suffix";
-  }
-
   private static function line($key, $text = '', $indent = 0)
   {
-    $key  = \Neddle\Helpers::unescape(trim($key));
-    $text = \Neddle\Helpers::unescape($text);
+    $key = trim($key);
+    $peak = substr($key, 0, 1);
+    $later = trim(substr($key, 1));
 
-    switch (substr($key, 0, 1)) {
+    switch ($peak) {
+      // HTML-comments
       case '/';
-        // <!-- ... -->
-        return '<!--' . trim(substr($key, 1)) . "-->$text";
+        return "<!--$later$text-->";
       break;
+      // HTML-tag
       case '<';
-        // html
-        return "$key$text";
+        return $key . $text;
       break;
+      // PHP-tags
       case '-';
-        // php
-        $key = rtrim(substr($key, 1), ';');
-        $key = preg_replace('/\belse\s*;/', 'else{', static::block($key));
-
-        return "<?php $key ?>$text";
+        return '<' . '?php ' . "$later ?>$text";
+      break;
+      case '=';
+        return '<' . '?php echo ' . "$later ?>$text";
       break;
       case '~';
-        $key = rtrim(trim(substr($key, 1)), ';');
-        return "<?php echo \\Neddle\\Helpers::quote($key); ?>";
-      case '=';
-        // print
-        $key = trim(substr($key, 1));
-        $key = static::block(rtrim($key, ';'), 'echo ');
-
-        return "<?php $key ?>$text";
-      break;
-      case '\\';
-        return substr($key, 1) . $text;
-      break;
+        return '<' . "?php echo \\Neddle\\Helpers::quote($later); ?>$text";
       case ';';
         continue;
       break;
@@ -268,20 +270,19 @@ class Parser
         if ( ! empty($match[0])) {
           $key = substr($key, strlen($match[0]));
 
-          preg_match(static::$id, $match[0], $match);
+          preg_match(static::$attrid, $match[0], $match);
 
           ! empty($match[1]) && $args['id'] = $match[1];
           ! empty($match[2]) && $args['class'] = strtr($match[2], '.', ' ');
-
-          // TODO: nested tags :foo#candy:.bar
         }
 
         // raw attributes ( key="val" )
-        preg_match('/^\s*\((.+?)\)/', $key,$match);
+        preg_match('/^\s*\((.+?)\)/', $key, $match);
 
         if ( ! empty($match[0])) {
           $key   = str_replace($match[0], '', $key);
           $tmp   = \Neddle\Helpers::args($match[1]);
+
           $args += $tmp;
         }
 
@@ -294,19 +295,51 @@ class Parser
         }
 
         // output
-        preg_match('/^\s*=.+?/', $key, $match);
+        preg_match('/^\s*[-~=:]/', $key, $match);
 
         if ( ! empty($match[0])) {
-          $text = static::line($key);
+          $text = static::line(trim($key), $text, $indent);
         } else {
-          $text = "\n$key$text\n";
+          $text = $key . $text;
         }
 
         $out = ($tag OR $args) ? \Neddle\Markup::render($tag ?: 'div', $args, $text) : $text;
-        $out = \Neddle\Helpers::indent($out, static::$indent);
 
         return $out;
       break;
+    }
+  }
+
+  private static function span($indent = 0)
+  {
+    return $indent > 0 ? str_repeat(str_repeat(' ', static::$indent), $indent) : '';
+  }
+
+  private static function lambda($value, $inline = FALSE)
+  {
+    $closure = '/' . static::$lambda . '/';
+
+    if (preg_match($closure, $value, $test)) {
+      @list($prefix, $suffix) = explode($test[0], $value);
+
+      $import = preg_match('/^[\s\w$]+$/', $test[2]) ? strtr($test[2], array(' ' => '', '$' => ', &$')) : '';
+
+      $function  = "!! (\$__ = get_defined_vars()) | 1 ? function ($test[1]) use (\$__$import) {";
+      $function .= " extract(\$__, EXTR_SKIP | EXTR_REFS); unset(\$__);";
+
+      if ($inline) {
+        $lft = substr_count($value, '(');
+        $rgt = substr_count($value, ')');
+
+        $close = str_repeat(')', $lft - $rgt);
+
+        $suffix = trim($test[2]);
+        $suffix = $suffix ? " $suffix;" : '';
+
+        return "$prefix $function$suffix } : false$close";
+      } else {
+        return "$prefix $function";
+      }
     }
   }
 
