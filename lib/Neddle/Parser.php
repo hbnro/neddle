@@ -28,16 +28,9 @@ class Parser
                     'output', 'progress', 'meter', 'details', 'summary', 'command', 'menu', 'device',
                   );
 
-  private static $prep = array(
-                    '/\s*\|/m' => '!Æ;',
-                    '/[\r\n]/' => "\n",
-                    "/\s*, *\n+\s*/" => ', ',
-                    "/\s*\\\\ *\n+\s*/" => ' ',
-                  );
-
   public static function render($text)
   {
-    $out = static::fix(static::tree($text));
+    $out = static::fix(static::tree(\Neddle\Helpers::prepare($text)));
     $out = \Neddle\Helpers::unescape(\Neddle\Helpers::repare($out));
 
     return $out;
@@ -46,8 +39,6 @@ class Parser
   private static function tree($source)
   {
     static::$indent = 2;
-
-    $source = preg_replace(array_keys(static::$prep), static::$prep, $source);
 
     if (preg_match('/^ +(?=\S)/m', $source, $match)) {
       static::$indent = strlen($match[0]);

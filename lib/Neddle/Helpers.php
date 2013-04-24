@@ -21,6 +21,13 @@ class Helpers
                     '/!Æ;/' => '',
                   );
 
+  private static $prep = array(
+                    '/\s*\|/m' => '!Æ;',
+                    '/[\r\n]/' => "\n",
+                    "/\s*, *\n+\s*/" => ', ',
+                    "/\s*\\\\ *\n+\s*/" => ' ',
+                  );
+
   private static $args_expr = '/(?:^|\s+)(?:([\w:-]+)\s*=\s*([\'"]?)(.*?)\\2|[\w:-]+)(?=\s+|$)/';
 
   private static $filters = array();
@@ -64,6 +71,11 @@ class Helpers
     }
 
     return $out;
+  }
+
+  public static function prepare($source)
+  {
+    return preg_replace(array_keys(static::$prep), static::$prep, $source);
   }
 
   public static function repare($code)
