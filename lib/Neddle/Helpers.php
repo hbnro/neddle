@@ -26,8 +26,6 @@ class Helpers
 
   private static $filters = array();
 
-
-
   public static function register($name, \Closure $lambda)
   {
     static::$filters[$name] = $lambda;
@@ -65,6 +63,7 @@ class Helpers
     foreach ($set as $one) {
       is_array($one) ? $out = static::flatten($one, $out) : $out []= $one;
     }
+
     return $out;
   }
 

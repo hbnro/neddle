@@ -10,8 +10,6 @@ class Markup
                     'embed', 'param', 'source', 'track', 'area',
                   );
 
-
-
   public static function render($tag, array $args, $text = '')
   {
     $tmp   = array();
@@ -23,7 +21,6 @@ class Markup
         unset($args[$key]);
       }
     }
-
 
     if ( ! empty($args)) {
       $tmp []= var_export($args, TRUE);
@@ -50,7 +47,6 @@ class Markup
         is_array($one) && $args = array_merge($args, $one);
       }
     }
-
 
     $out = array('');
 

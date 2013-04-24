@@ -13,7 +13,6 @@ class Parser
   private static $lambda = '(?:\(([^()]*?)\))?\s*~>(.*)?';
   private static $block = '(?:else|do|try|finally)';
 
-
   private static $tags = array(
                     'hr', 'br', 'img', 'base', 'link', 'meta', 'input', 'embed', 'param',
                     'source', 'track', 'area', 'html', 'head', 'title', 'base', 'link', 'main',
@@ -36,8 +35,6 @@ class Parser
                     "/\s*\\\\ *\n+\s*/" => ' ',
                   );
 
-
-
   public static function render($text)
   {
     $out = static::fix(static::tree($text));
@@ -45,7 +42,6 @@ class Parser
 
     return $out;
   }
-
 
   private static function tree($source)
   {
@@ -56,7 +52,6 @@ class Parser
     if (preg_match('/^ +(?=\S)/m', $source, $match)) {
       static::$indent = strlen($match[0]);
     }
-
 
     $code  = '';
     $stack = array();
@@ -72,7 +67,6 @@ class Parser
       if ($tab && ($tab % static::$indent)) {
         continue;// TODO: guessing?
       }
-
 
       if ($indent > $tab) {
         $stack []= substr(mt_rand(), 0, 7);
@@ -99,7 +93,6 @@ class Parser
       $code .= ";";
     }
 
-
     @eval($code);
 
     if (empty($out)) {
@@ -108,7 +101,6 @@ class Parser
 
     return $out;
   }
-
 
   private static function open($value)
   {
@@ -120,7 +112,6 @@ class Parser
     if ( ! is_scalar($value)) {
       return $value;
     }
-
 
     if (preg_match($ifthen, $value, $test, PREG_OFFSET_CAPTURE)) {
       @list($lft, $rgt) = array(substr($value, 0, $test[0][1]), substr($value, $test[0][1]));
@@ -135,7 +126,6 @@ class Parser
         $expr = "! ($expr)";
         $block = 'if';
       }
-
 
       if (trim($lft, '-~= ')) {
         return "- $block ($expr) : ?" . ">$value<" . "?php end$block";
@@ -232,20 +222,25 @@ class Parser
     switch ($peak) {
       // HTML-comments
       case '/';
+
         return "<!--$later$text-->";
       break;
       // HTML-tag
       case '<';
+
         return $key . $text;
       break;
       // PHP-tags
       case '-';
+
         return '<' . '?php ' . "$later ?>$text";
       break;
       case '=';
+
         return '<' . '?php echo ' . "$later ?>$text";
       break;
       case '~';
+
         return '<' . "?php echo \\Neddle\\Helpers::quote($later); ?>$text";
       case ';';
         continue;
@@ -262,7 +257,6 @@ class Parser
           $key = substr($key, strlen($match[0]));
           $tag = $match[1];
         }
-
 
         // attributes (raw)
         preg_match('/^[#.](?:[a-z][.\w-]*)+/', $key, $match);
