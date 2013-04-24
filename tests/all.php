@@ -50,11 +50,13 @@ dl
 
       a#y { href => "#", class => "bar" } = 'Link'
 
-    /
-      a.b { href => "#c" } link
-      a.link text
-      a.link text
-      a.link text
+  /
+    a.b { href => "#c" } link
+    a.link text
+    a.link text
+    a.link text
+
+    li lol
 
   p dos
 
@@ -73,13 +75,12 @@ $view = Neddle\Parser::render($tpl);
 $test = @eval('ob_start(); ?' . ">$view<" . '?php return ob_get_clean();');
 $expect = '<divclass="candy">xman?fuckyeah</div>' . phpversion() . '<span>&lt;escapedtext&gt;<Fuckyeah!></span>';
 $expect .= 'Thisistextandshouldberenderedasis<dl><dt>OK</dt><dd>FUUU</dd></dl><divclass="foo"><ulid="foo"class="candy">';
-$expect .= '<liclass="x"><ahref="#"class="bar"id="y">Link</a></li><!--a.b{href=>"#c"}linka.linktexta.linktexta.linktext--></ul><p>dos</p></div><spankey="&lt;?phpecho$foo;?&gt;">etc.</span>';
+$expect .= '<liclass="x"><ahref="#"class="bar"id="y">Link</a></li><!--a.b{href=>"#c"}linka.linktexta.linktexta.linktext--><li>lol</li></ul><p>dos</p></div><spankey="&lt;?phpecho$foo;?&gt;">etc.</span>';
 $expect .= '<pfoo="bar"baz="buzz">thisis,somelargetextinthere...</p>';
 
 echo "\nOutput: ";
 echo $expect === $clean($test) ? 'OK' : 'FAIL';
-
-
+echo $test;
 $tpl = <<<DOC
 
 :title
@@ -97,7 +98,7 @@ $tpl = <<<DOC
 :body
   Well this contents will never breaks
 
-  yeah? this is merely the turth man...
+  yeah? this is merely the truth man...
   /this is a comment
   OK, if a want to be parsed?
 
@@ -133,8 +134,7 @@ $tpl = <<<'TEXT'
 - $bar = 4
 - $foo = array(1,2,3)
 ul
-  - while $bar -= 1
-    li = "$bar"
+  li = "$bar" while $bar -= 1
 = "A" for $i = 0; $i < 4; $i += 1
 = "<p>$bar</p>" foreach $foo as $bar
 - $candy = 'does' if !! $foo
@@ -143,13 +143,19 @@ ul
 - unless true
   p Welcome sir!
 
+- try
+  Loooolz
+  - throw new \Exception
+- catch \Exception $e
+  nothing to do here
+
 TEXT;
 
 
 $view = Neddle\Parser::render($tpl);
-$test = @eval('ob_start(); ?' . ">$view<?" . 'php return ob_get_clean();');
+$test = eval('ob_start(); ?' . ">$view<?" . 'php return ob_get_clean();');
 $test = $clean(strip_tags($test));
-$expect = '321AAAA123FTW!!';
+$expect = '321AAAA123FTW!!Loooolznothingtodohere';
 
 echo "\nConditions: ";
 echo $test === $expect ? 'OK' : 'FAIL';
