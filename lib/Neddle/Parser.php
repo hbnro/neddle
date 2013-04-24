@@ -107,7 +107,7 @@ class Parser
     $out = array();
 
     $block  = '/^\s*-\s*' . static::$block . '\b/i';
-    $ifthen  = '/\s+(' . static::$ifthen . ')\b/i';
+    $ifthen  = '/(?<![[({<])\b(' . static::$ifthen . ')\b/i';
 
     if ( ! is_scalar($value)) {
       return $value;
