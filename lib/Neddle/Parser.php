@@ -207,7 +207,7 @@ class Parser
       }
     }
 
-    $out = join('', $out);
+    $out = join("\n", $out);
 
     return $out;
   }
