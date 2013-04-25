@@ -18,7 +18,7 @@ class Helpers
                     '/<\?=\s*(.+?)\s*;?\s*\?>/' => '<?php echo \\1; ?>',
                     '/\?>\s*<\?php\s+(?=else|finally|catch)/s' => '',
                     '/#\{(.+?)\}/' => '<?php echo \\1; ?>',
-                    '/!Æ;/' => '',
+                    '/!Æ;/' => "\n",
                   );
 
   private static $prep = array(
