@@ -134,7 +134,7 @@ $tpl = <<<'TEXT'
 - $bar = 4
 - $foo = array(1,2,3)
 ul
-  li = "$bar" while $bar -= 1
+  li = "$bar" @while $bar -= 1
 = "A" for $i = 0; $i < 4; $i += 1
 = "<p>$bar</p>" foreach $foo as $bar
 - $candy = 'does' if !! $foo
