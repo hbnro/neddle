@@ -75,7 +75,7 @@ $view = Neddle\Parser::render($tpl);
 $test = @eval('ob_start(); ?' . ">$view<" . '?php return ob_get_clean();');
 $expect = '<divclass="candy">xman?fuckyeah</div>' . phpversion() . '<span>&lt;escapedtext&gt;<Fuckyeah!></span>';
 $expect .= 'Thisistextandshouldberenderedasis<dl><dt>OK</dt><dd>FUUU</dd></dl><divclass="foo"><ulid="foo"class="candy">';
-$expect .= '<liclass="x"><ahref="#"class="bar"id="y">Link</a></li><!--a.b{href=>"#c"}linka.linktexta.linktexta.linktext--><li>lol</li></ul><p>dos</p></div><spankey="&lt;?phpecho$foo;?&gt;">etc.</span>';
+$expect .= '<liclass="x"><ahref="#"class="bar"id="y">Link</a></li><!--<ahref="#c"class="b">link</a><aclass="link">text</a><aclass="link">text</a><aclass="link">text</a>--><li>lol</li></ul><p>dos</p></div><spankey="&lt;?phpecho$foo;?&gt;">etc.</span>';
 $expect .= '<pfoo="bar"baz="buzz">thisis,somelargetextinthere...</p>';
 
 echo "\nOutput: ";
@@ -153,7 +153,7 @@ TEXT;
 
 
 $view = Neddle\Parser::render($tpl);
-$test = eval('ob_start(); ?' . ">$view<?" . 'php return ob_get_clean();');
+$test = @eval('ob_start(); ?' . ">$view<?" . 'php return ob_get_clean();');
 $test = $clean(strip_tags($test));
 $expect = '321AAAA123FTW!!Loooolznothingtodohere';
 
