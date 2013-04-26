@@ -10,7 +10,7 @@ class Parser
   private static $attrid = '/^(?:#([a-z_][\da-z_-]*))?(?:.?([\d.a-z_-]+))?/i';
 
   private static $ifthen = '(?:(?:else\s*?)?if|unless|while|switch|for(?:each)?|catch)';
-  private static $lambda = '(?:\(([^()]*?)\))?\s*~>(.*)?';
+  private static $lambda = '\s*(?:\(([^()]*?)\))?\s*~>';
   private static $block = '(?:else|do|try|finally)';
 
   private static $tags = array(
@@ -30,10 +30,13 @@ class Parser
 
   public static function render($text)
   {
-    $out = static::fix(static::tree(\Neddle\Helpers::prepare($text)));
-    $out = \Neddle\Helpers::unescape(\Neddle\Helpers::repare($out));
+    $tree = \Neddle\Helpers::prepare($text);
 
-    return $out;
+    $tree = static::tree($tree);
+    $tree = static::fix($tree);
+    $tree = static::build($tree);
+
+    return \Neddle\Helpers::repare($tree);
   }
 
   private static function tree($source)
@@ -78,9 +81,9 @@ class Parser
 
       $code .= $key;
 
-      $line  = \Neddle\Helpers::escape($line);
+      $line  = trim(\Neddle\Helpers::escape($line));
 
-      $code .= $indent > $tab ? "=array(-1=>'$line')" : "[]='$line'";
+      $code .= $indent > $tab ? "=array('@'=>'$line')" : "[]='$line'";
       $code .= ";";
     }
 
@@ -93,12 +96,13 @@ class Parser
     return $out;
   }
 
-  private static function open($value)
+  private static function open($value, $inline = FALSE)
   {
     $out = array();
+    $pre = $inline ? '\s+(?!@)' : '\s*[-~=]\s*';
 
-    $block  = '/^\s*-\s*' . static::$block . '\b/i';
-    $ifthen  = '/(?<![[({<])\b(' . static::$ifthen . ')\b/i';
+    $block  = '/^\s*-\s*(' . static::$block . ')\b/i';
+    $ifthen  = "/$pre(" . static::$ifthen . ')\b/i';
 
     if ( ! is_scalar($value)) {
       return $value;
@@ -111,19 +115,20 @@ class Parser
       $expr  = join('', array_filter($parts, 'strlen'));
 
       $block = $test[1][0];
-      $value = static::line($lft);
 
       if (strpos($block, 'unless') !== FALSE) {
         $expr = "! ($expr)";
         $block = 'if';
       }
-      if (trim($lft, '-~= ')) {
-        return "- $block ($expr) : ?" . ">$value<" . "?php end$block";
+
+      if ($inline) {
+        $lft   = static::line($lft);
+        $value = "- $block ($expr) : ?" . ">$lft<" . "?php end$block";
       } else {
-        return "- $block ($expr) {";
+        $value = "- $block ($expr) {";
       }
-    } elseif (preg_match($block, $value)) {
-      return "$value {";
+    } elseif (preg_match($block, $value, $match)) {
+      $value = "- $match[1] {";
     }
 
     return $value;
@@ -131,9 +136,7 @@ class Parser
 
   private static function close($value)
   {
-    $out = array();
-
-    $block  = '/^\s*-\s*(?:' . static::$ifthen . '|' . static::$block . ')\b/i';
+    $block  = '/\s+(?:' . static::$ifthen . '|' . static::$block . ')\b/i';
     $lambda = '/' . static::$lambda . '/';
 
     if ( ! is_scalar($value)) {
@@ -146,55 +149,57 @@ class Parser
 
       $close = str_repeat(')', $lft - $rgt);
 
-      return '<' . "?php } : false$close; ?" . '>';
+      return "- } : false$close";
     } elseif (preg_match($block, $value)) {
-      return '<' . '?php } ?' . '>';
+      return '- }';
     }
   }
 
-  private static function fix($tree, $indent = 0)
+  private static function fix($tree)
   {
-    $out = array();
-    $span = static::span($indent);
+    $tmp = array();
 
-    if ( ! empty($tree[-1])) {
+    foreach ($tree as $key => $value) {
+      is_array($value) && $tree[$key] = static::fix($value);
+    }
 
-      ($overwrite = static::open($tree[-1])) && $tree[-1] = $overwrite;
 
-      $sub[$tree[-1]] = array_slice($tree, 1);
-
-      if ($suffix = static::close($tree[-1])) {
-        $sub[$tree[-1]] []= $suffix;
+    if ( ! empty($tree['@'])) {
+      if ($suffix = static::close($tree['@'])) {
+        $tree []= $suffix;
       }
 
-      $out []= static::fix($sub, $indent + 1);
-    } elseif ($tree) {
-      foreach ($tree as $key => $value) {
-        if (is_string($value)) {
-          ($overwrite = static::lambda($value, TRUE)) && $value = $overwrite;
-          ($overwrite = static::open($value)) && $value = $overwrite;
+      ($overwrite = static::open($tree['@'])) && $tree['@'] = $overwrite;
+      ($overwrite = static::lambda($tree['@'])) && $tree['@'] = $overwrite;
 
-          $out []= static::line(substr($value, -1) === '{' ? $value = "$value }" : trim($value), '', $indent);
+      $tree = array($tree['@'] => array_slice($tree, 1));
+    }
+
+    return $tree;
+  }
+
+  private static function build($tree, $indent = 0)
+  {
+    $out = array();
+
+    foreach ($tree as $key => $value) {
+      if (is_string($value)) {
+        ($overwrite = static::open($value, TRUE)) && $value = $overwrite;
+
+        $out []= static::line($value);
+      } else {
+        $key = preg_match('/#\d{1,7}/', $key) ? FALSE : trim($key);
+
+        if (substr($key, 0, 3) === 'pre') {
+          $value = join("\n", \Neddle\Helpers::flatten($value));
+        } elseif (substr($key, 0, 1) === ':') {
+          $value = \Neddle\Helpers::execute(substr($key, 1), join("\n", \Neddle\Helpers::flatten($value)));
+          $key   = FALSE;
         } else {
-          ($overwrite = static::lambda($key)) && $key = $overwrite;
-
-          $key = preg_match('/#\d{1,7}/', $key) ? FALSE : trim($key);
-
-          if (substr($key, 0, 3) === 'pre') {
-            $value = preg_replace("/^$span/m", '|', join("\n", \Neddle\Helpers::flatten($value)));
-          } elseif (substr($key, 0, 1) === ':') {
-            $value = \Neddle\Helpers::execute(substr($key, 1), join("\n", \Neddle\Helpers::flatten($value)));
-            $key   = FALSE;
-          } elseif (substr($key, 0, 1) === '/') {
-            $key   = join("\n", \Neddle\Helpers::flatten($value));
-            $key   = '/' . trim(preg_replace('/^/m', static::span($indent + 1), $key));
-            $value = '';
-          } else {
-            $value = static::fix($value, $indent);
-          }
-
-          $out []= $span . static::line($key, $value, $indent);
+          $value = static::build($value, $indent + 1);
         }
+
+        $out []= static::line($key, $value);
       }
     }
 
@@ -203,7 +208,7 @@ class Parser
     return $out;
   }
 
-  private static function line($key, $text = '', $indent = 0)
+  private static function line($key, $text = '')
   {
     $key = trim($key);
     $peak = substr($key, 0, 1);
@@ -223,15 +228,19 @@ class Parser
       // PHP-tags
       case '-';
 
-        return '<' . '?php ' . "$later ?>$text";
+        return static::php($later) . $text;
       break;
       case '=';
 
-        return '<' . '?php echo ' . "$later ?>$text";
+        return static::php("echo $later") . $text;
       break;
       case '~';
 
-        return '<' . "?php echo \\Neddle\\Helpers::quote($later); ?>$text";
+        return static::php("echo \\Neddle\\Helpers::quote($later)") . $text;
+      case '|';
+
+        return substr($key, 1);
+      break;
       case ';';
         continue;
       break;
@@ -282,7 +291,7 @@ class Parser
         preg_match('/^\s*[-~=:]/', $key, $match);
 
         if ( ! empty($match[0])) {
-          $text = static::line(trim($key), $text, $indent);
+          $text = static::line(trim($key), $text);
         } else {
           $text = $key . $text;
         }
@@ -294,36 +303,34 @@ class Parser
     }
   }
 
+  private static function php($code)
+  {
+    return '<' . "?php $code ?" . '>';
+  }
+
   private static function span($indent = 0)
   {
     return $indent > 0 ? str_repeat(str_repeat(' ', static::$indent), $indent) : '';
   }
 
-  private static function lambda($value, $inline = FALSE)
+  private static function lambda($value)
   {
     $closure = '/' . static::$lambda . '/';
 
     if (preg_match($closure, $value, $test)) {
       @list($prefix, $suffix) = explode($test[0], $value);
 
-      $import = preg_match('/^[\s\w$]+$/', $test[2]) ? strtr($test[2], array(' ' => '', '$' => ', &$')) : '';
+      $tmp = isset($test[1]) ? $test[1] : '';
+      $tmp = array_map('trim', explode(';', $tmp));
 
-      $function  = "!! (\$__ = get_defined_vars()) | 1 ? function ($test[1]) use (\$__$import) {";
+      $locals = array_pop($tmp);
+      $import = array_shift($tmp);
+      $import = $import ? str_replace('$', '&$', ", $import") : '';
+
+      $function  = "!! (\$__ = get_defined_vars()) | 1 ? function ($locals) use (\$__$import) {";
       $function .= " extract(\$__, EXTR_SKIP | EXTR_REFS); unset(\$__);";
 
-      if ($inline) {
-        $lft = substr_count($value, '(');
-        $rgt = substr_count($value, ')');
-
-        $close = str_repeat(')', $lft - $rgt);
-
-        $suffix = trim($test[2]);
-        $suffix = $suffix ? " $suffix;" : '';
-
-        return "$prefix $function$suffix } : false$close";
-      } else {
-        return "$prefix $function";
-      }
+      return "$prefix $function";
     }
   }
 

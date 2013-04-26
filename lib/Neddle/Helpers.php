@@ -6,24 +6,21 @@ class Helpers
 {
 
   private static $qt = array(
-                    '\\' => '!uß;',
-                    "'" => '!u€;',
-                    '$' => '!u£;',
+                    '\\' => '\\\\',
+                    "'" => '\\\'',
                   );
 
   private static $fix = array(
-                    '/\s*<\/pre>/s' => '</pre>',
                     '/(?<![:\w]):([_a-zA-Z][\w-]*)(?=\s*(?:[,)\];]|$|=>))/' => "'\\1'",
                     '/([,([]\s*)([a-z][\w:-]*)\s*=>\s*/' => "\\1'\\2' => ",
                     '/<\?=\s*(.+?)\s*;?\s*\?>/' => '<?php echo \\1; ?>',
                     '/\?>\s*<\?php\s+(?=else|finally|catch)/s' => '',
                     '/#\{(.+?)\}/' => '<?php echo \\1; ?>',
-                    '/!Æ;/' => "\n",
+                    '/\s*<\/pre>/s' => '</pre>',
                   );
 
   private static $prep = array(
-                    '/\s*\|/m' => '!Æ;',
-                    '/[\r\n]/' => "\n",
+                    "/[\r\n]/" => "\n",
                     "/\s*, *\n+\s*/" => ', ',
                     "/\s*\\\\ *\n+\s*/" => ' ',
                   );
@@ -44,7 +41,6 @@ class Helpers
     }
 
     $callback = static::$filters[$filter];
-    $value    = static::unescape($value);
 
     if (preg_match('/^ +/', $value, $match)) {
       $max   = strlen($match[0]);
@@ -54,14 +50,9 @@ class Helpers
     return $callback($value);
   }
 
-  public static function escape($text, $rev = FALSE)
+  public static function escape($text)
   {
-    return strtr($text, $rev ? array_flip(static::$qt) : static::$qt);
-  }
-
-  public static function unescape($text)
-  {
-    return static::escape($text, TRUE);
+    return strtr($text, static::$qt);
   }
 
   public static function flatten($set, $out = array())
