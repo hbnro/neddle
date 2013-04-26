@@ -190,7 +190,7 @@ class Parser
         $key = preg_match('/#\d{1,7}/', $key) ? FALSE : trim($key);
 
         if (substr($key, 0, 3) === 'pre') {
-          $value = join("\n", \Neddle\Helpers::flatten($value));
+          $value = preg_replace('/^\s*\|/m', '', join("\n", \Neddle\Helpers::flatten($value)));
         } elseif (substr($key, 0, 1) === ':') {
           $value = \Neddle\Helpers::execute(substr($key, 1), join("\n", \Neddle\Helpers::flatten($value)));
           $key   = FALSE;
