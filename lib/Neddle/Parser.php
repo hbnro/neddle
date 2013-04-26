@@ -237,6 +237,7 @@ class Parser
 
         return static::php("echo \\Neddle\\Helpers::quote($later)") . $text;
       case '|';
+      case '\\';
 
         return substr($key, 1);
       break;
