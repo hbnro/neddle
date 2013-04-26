@@ -27,7 +27,7 @@ closures and almost all php code.
 
 **html-blocks**
 
-    .class#id { attr => $value }
+    #id.class { attr => $value }
       a { href => '#' } link text
 
     p
@@ -62,10 +62,10 @@ closures and almost all php code.
 
     ul
       - for $i = 0; $i < 10; $i += 1
-      li = "Item $i"
+        li = "Item $i"
 
     - $all = array(1, 2, 3)
-    = "<p>$one</p>" while $one = array_shift($all)
+    p #{$one} @while $one = array_shift($all)
 
     - unless false
       some text
