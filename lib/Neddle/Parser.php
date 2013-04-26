@@ -99,7 +99,7 @@ class Parser
   private static function open($value, $inline = FALSE)
   {
     $out = array();
-    $pre = $inline ? '\s+(?!@)' : '\s*[-~=]\s*';
+    $pre = preg_match('/^[-~=]/', $value) ? '\s+' : '\s+@';
 
     $block  = '/^\s*-\s*(' . static::$block . ')\b/i';
     $ifthen  = "/$pre(" . static::$ifthen . ')\b/i';
@@ -122,7 +122,7 @@ class Parser
       }
 
       if ($inline) {
-        $lft   = static::line($lft);
+        $lft   = static::line(substr($lft, 0, -1));
         $value = "- $block ($expr) : ?" . ">$lft<" . "?php end$block";
       } else {
         $value = "- $block ($expr) {";
@@ -136,7 +136,7 @@ class Parser
 
   private static function close($value)
   {
-    $block  = '/\s+(?:' . static::$ifthen . '|' . static::$block . ')\b/i';
+    $block  = '/\s*-\s*(?:' . static::$ifthen . '|' . static::$block . ')\b/i';
     $lambda = '/' . static::$lambda . '/';
 
     if ( ! is_scalar($value)) {
