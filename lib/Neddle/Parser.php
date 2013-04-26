@@ -163,7 +163,6 @@ class Parser
       is_array($value) && $tree[$key] = static::fix($value);
     }
 
-
     if ( ! empty($tree['@'])) {
       if ($suffix = static::close($tree['@'])) {
         $tree []= $suffix;
